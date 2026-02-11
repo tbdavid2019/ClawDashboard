@@ -1,8 +1,12 @@
 # Claw Dashboard
 
+---
+
 一個簡潔、高效的本地 AI Agent 儀表板，整合了任務管理、狀態追蹤與自動化文件同步功能。
 
 核心理念：**所有 Agent 行為都必須可視化、可追蹤、可回放**，形成 `Agent` → `Status` → `Task` → `Docs` → `UI` 的完整閉環系統。
+
+---
 
 ## 🚀 快速開始
 
@@ -32,6 +36,8 @@ chmod +x start.sh && ./start.sh
 啟動後，請與 OpenClaw 溝通，下達以下指令以建立長期記憶：
 
 > "請去 `.openclaw/workspace/ClawDashboard/backend/docs` 讀取裡面的兩篇 `.md` 檔案，做相應的處理並且存入長記憶中。"
+
+---
 
 ### 🛠️ 手動安裝與啟動
 
