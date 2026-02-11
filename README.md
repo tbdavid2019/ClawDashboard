@@ -19,8 +19,6 @@ cd ClawDashboard
 
 ### ⚡ 一行啟動
 
-### ⚡ 一行啟動
-
 專案內建自動化啟動腳本，首次運行會自動安裝依賴：
 
 ```bash
@@ -28,6 +26,12 @@ chmod +x start.sh && ./start.sh
 ```
 
 啟動後會自動開啟瀏覽器，訪問 `http://localhost:5173`。
+
+### 🧠 初始化長期記憶 (Long Memory Init)
+
+啟動後，請與 OpenClaw 溝通，下達以下指令以建立長期記憶：
+
+> "請去 `.openclaw/workspace/ClawDashboard/backend/docs` 讀取裡面的兩篇 `.md` 檔案，做相應的處理並且存入長記憶中。"
 
 ### 🛠️ 手動安裝與啟動
 
