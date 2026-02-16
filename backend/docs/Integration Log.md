@@ -1,135 +1,163 @@
 # ClawDashboard Integration Log
 
-------------------------------------------------------------------------
+---
 
 # 一、系統架構總覽
 
+Dashboard 是**被動接收**架構。Agent 必須主動打 API 回報狀態。
+
+## 資料流
+
+```
+Agent → POST API → Backend (Express) → SQLite + SSE → Frontend (React)
+                                      → 讀取 openclaw.json (Agent 列表)
+                                      → 掃描 WORKSPACE_ROOT/*.md (Docs)
+```
+
+---
+
 ## Status Flow（狀態燈）
-
-### 前端
-
--   frontend/src/App.jsx
--   輪詢 GET /api/status
--   狀態：idle / thinking / acting
 
 ### 後端
 
--   SQLite table: status (state, active_agent)
--   SQLite table: agent_states (name, state, updated_at)
--   API:
-    -   GET /api/status
-    -   PUT /api/status (Global Status)
-    -   POST /api/status/agent (Individual Agent Status)
+- SQLite table: `status` (state, active_agent, updated_at)
+- SQLite table: `agent_states` (name, state, updated_at)
+- API:
+    - `GET /api/status` — 取得全域狀態 + 各 Agent 狀態 map
+    - `PUT /api/status` — 更新全域狀態 (`state` + `activeAgent`)
+    - `POST /api/status/agent` — 更新個別 Agent 狀態 (`name` + `state`)
 
-------------------------------------------------------------------------
+### 前端
+
+- 透過 SSE (`/api/events`) 即時接收狀態更新
+- 三種狀態顯示: busy (acting) / thinking / standby (idle)
+
+---
 
 ## Task Flow（看板）
 
 ### API
 
--   GET /api/tasks
--   POST /api/tasks
--   PUT /api/tasks/:id
+- `GET /api/tasks`
+- `POST /api/tasks`
+- `PUT /api/tasks/:id`
 
 ### 任務狀態
 
--   todo
--   in_progress
--   done
+- `todo` → `in_progress` → `done`
 
-------------------------------------------------------------------------
+---
 
-# 二、Docs 系統架構
+## Webhook（自動化驅動）
 
-## Workspace Root
+`POST /api/webhook/message`
 
-path.join(\_\_dirname, '../../..', 'workspace')
+```json
+{
+  "text": "任務內容",
+  "stage": "received | started | completed",
+  "taskId": "optional (started/completed 必填)"
+}
+```
 
-### 類型分類
+| stage | 結果 |
+|:---|:---|
+| `received` | 建立 todo task |
+| `started` | task → in_progress |
+| `completed` | task → done |
 
-### Workspace
+---
 
--   id = file:`<relative_path>`{=html}
--   category = System
--   唯讀
+# 二、Docs 系統
 
-### Backend Docs
+## 兩種文件來源
 
-來源: backend/docs - category = Docs
+| 來源 | 類別 | 權限 | 路徑 |
+|:---|:---|:---|:---|
+| Workspace | System | 唯讀 | `WORKSPACE_ROOT` 下所有 `.md`（遞迴掃描）|
+| Backend Docs | Docs | 可讀寫 | `backend/docs/` 目錄 |
 
-------------------------------------------------------------------------
+## WORKSPACE_ROOT
+
+從 `backend/.env` 的 `WORKSPACE_ROOT` 讀取。
+安裝時由 `setup.sh --workspace /path` 設定。
+
+支援多 Agent 場景：
+```
+WORKSPACE_ROOT=/home/david/project
+→ 會掃描 clawd/, clawd-voice/, clawd-invest/ 等所有子目錄的 .md 檔
+```
+
+自動排除：`node_modules`, `.git`, `dist`, `build` 等。
+ClawDashboard 目錄只讀 `records/` 子目錄。
+
+---
 
 # 三、Agents Sidebar
 
-## Backend
+## 資料來源
 
-GET /api/agents\
-來源: ../../.. /openclaw.json\
-排除 defaults
+`GET /api/agents` → 讀取 `OPENCLAW_CONFIG`（`openclaw.json`）
+排除 `defaults` key，其餘每個 key 就是一個 Agent。
 
-## Frontend
+## 前端顯示邏輯
 
--   呼叫 /api/agents (agent 列表)
--   呼叫 /api/status (含 agents map，各 agent 獨立狀態)
--   若為空不顯示 Team Status
--   優先以 agentStates[name] 判斷個別狀態
--   fallback: activeAgent + global status
--   三種顯示: busy (acting) / thinking / standby (idle)
+1. 呼叫 `/api/agents`（Agent 列表）
+2. 呼叫 `/api/status`（含 agents map，各 Agent 獨立狀態）
+3. 若 agents 為空 → 不顯示 Team Status
+4. 優先以 `agentStates[name]` 判斷個別狀態
+5. Fallback: `activeAgent` + global status
 
-------------------------------------------------------------------------
+---
 
 # 四、自動化規則
 
-## 狀態規則
+## 每次對話必做
 
--   收到任務 → thinking
--   開始執行 → acting
--   完成 → idle
+1. 收到任務 → `PUT /api/status { state: "thinking" }`
+2. 建立 task → `POST /api/webhook/message { stage: "received" }`
+3. 開始執行 → `PUT /api/status { state: "acting" }`
+4. task 進行 → `POST /api/webhook/message { stage: "started", taskId }`
+5. task 完成 → `POST /api/webhook/message { stage: "completed", taskId }`
+6. 回歸閒置 → `PUT /api/status { state: "idle" }`
+7. 產出 `.md` 檔 → 放到 `backend/docs/`
 
-## Task 規則
+## 多 Agent
 
--   每次對話建立 task
--   title = 第一行摘要（≤120字）
--   description = 全文
--   狀態流轉：todo → in_progress → done
+- Main Agent 可用 `POST /api/status/agent { name, state }` 回報子 Agent 狀態
+- 或要求子 Agent 自己打 API 回報
 
-------------------------------------------------------------------------
+---
 
-# 五、Webhook
-
-POST /api/webhook/message
-
-Payload: { "text": "...", "stage": "received \| started \| completed",
-"taskId": "optional" }
-
-行為: - received → 建立 todo - started → in_progress - completed → done
-
-------------------------------------------------------------------------
-
-# 六、部署配置
+# 五、部署配置
 
 ## 網路模式
 
--   backend/.env 中的 HOST 控制綁定地址
--   HOST=127.0.0.1 → 本地模式（預設，安全）
--   HOST=0.0.0.0 → 區網模式（LAN 可存取）
--   前端 config.js 會自動偵測 hostname，無需手動設定 API URL
+- `HOST=127.0.0.1` → 本地模式（預設）
+- `HOST=0.0.0.0` → 區網模式
+- 前端自動偵測 hostname，不需手動設定 API URL
+
+## CORS
+
+- `CORS_ORIGINS=*` → 允許所有 origin（預設，適合 local + LAN）
+- `CORS_ORIGINS=http://host1,http://host2` → 白名單模式
 
 ## 啟動方式
 
--   ./start.sh → 前景啟動（開發用，Ctrl+C 停止）
--   ./start.sh --bg → PM2 背景常駐
--   ./start.sh --stop → 停止 PM2 服務
--   ./start.sh --status → 查看 PM2 狀態
--   ./start.sh --boot → 設定開機自啟（需搭配 pm2 save）
+| 指令 | 功能 |
+|:---|:---|
+| `./start.sh` | 前景啟動（開發用）|
+| `./start.sh --bg` | PM2 背景常駐 |
+| `./start.sh --stop` | 停止 |
+| `./start.sh --boot` | 開機自啟 |
+| `bash setup.sh --status` | 查看狀態 |
+| `bash setup.sh --update` | 更新 + 重啟 |
 
-## PM2 Ecosystem
-
--   pm2.ecosystem.config.js 定義 claw-backend 與 claw-frontend
--   自動讀取 backend/.env 的 HOST 設定來決定 Vite 的 --host 參數
-
-------------------------------------------------------------------------
+---
 
 # 結論
 
-完整閉環： Agent → Status → Task → Docs → UI
+閉環系統：**Agent → Status → Task → Docs → UI**
+
+Dashboard 不會主動偵測任何東西。
+所有可視化都靠 Agent 主動回報 API 來驅動。

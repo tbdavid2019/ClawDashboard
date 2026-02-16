@@ -204,58 +204,104 @@ pm2 save
 
 ---
 
-## 🏗️ 系統架構
+## 🏗️ 系統架構 — Dashboard 是被動的
+
+Dashboard **不會主動去問 Agent 狀態**。所有資料都是 Agent 主動回報或從檔案系統讀取。
 
 ```mermaid
-graph TD
-    Client["Frontend (React/Vite)"] <-->|API| Server["Backend (Express)"]
-    Server <-->|SQL| DB[("SQLite: bot.db")]
-    Server <-->|File System| Docs["Docs Directory"]
-    
-    subgraph Core Logic
-    Server -- Status Flow --> Status["User Status"]
-    Server -- Webhook --> Task["Task Management"]
+graph LR
+    subgraph Agents
+      A1["clawd (主 Agent)"]
+      A2["clawd-voice"]
+      A3["clawd-invest"]
     end
+
+    subgraph Dashboard
+      BE["Backend (Express :3001)"]
+      FE["Frontend (React :5173)"]
+      DB[(SQLite bot.db)]
+    end
+
+    A1 -->|POST /api/status/agent| BE
+    A2 -->|POST /api/status/agent| BE
+    A3 -->|POST /api/webhook/message| BE
+    BE <-->|SQL| DB
+    BE -->|SSE 即時推送| FE
+    BE -->|讀取 .md 檔| FS["檔案系統 (WORKSPACE_ROOT)"]
+    BE -->|讀取 openclaw.json| CFG["OPENCLAW_CONFIG"]
 ```
 
 ---
 
-## 🧩 核心概念與工作流
+## 🧩 資料來源與運作原理
 
-### 1. Status Flow (狀態燈)
+Dashboard 的四大資料來源，缺任何一個就少一塊拼圖：
 
-系統透過狀態燈即時反映 Agent 目前的運作情形。
+### 1. Agent 列表 — 從 `openclaw.json` 讀取
 
-- **三種狀態**：
-    - `idle`: 閒置中，等待指令。
-    - `thinking`: 收到任務，正在規劃或思考。
-    - `acting`: 正在執行具體操作。
-- **多 Agent 支援**：每個 Agent 可獨立回報狀態，前端會分別顯示。
-- **自動化規則**：
-    1.  收到任務 → 狀態轉為 `thinking`
-    2.  開始執行 → 狀態轉為 `acting`
-    3.  任務完成 → 狀態回歸 `idle`
+```
+GET /api/agents → 讀取 OPENCLAW_CONFIG 指向的 openclaw.json
+```
 
-### 2. Long Memory & Task Flow (長期記憶與任務看板)
+只拿 agent 名字列表，顯示在 sidebar。Dashboard 不管 agent 裝在哪裡、跑什麼程式。
 
-所有的對話與指令都會被轉化為結構化的 Task，並記錄在看板上。
+### 2. Agent 即時狀態 — Agent 主動回報 (API)
 
-- **Task 建立規則**：
-    - **Title**: 摘要（第一行，≤120字）
-    - **Description**: 全文內容
-- **狀態流轉**：
-    - `todo` (Received): 收到 Webhook 請求
-    - `in_progress` (Started): 任務開始執行
-    - `done` (Completed): 任務結束
+```bash
+# 個別 Agent 回報自己的狀態
+curl -X POST http://localhost:3001/api/status/agent \
+  -H "Content-Type: application/json" \
+  -d '{"name": "clawd-voice", "state": "acting"}'
 
-### 3. Docs System (文件系統)
+# 設定全域狀態 + 目前活躍的 Agent
+curl -X PUT http://localhost:3001/api/status \
+  -H "Content-Type: application/json" \
+  -d '{"state": "thinking", "activeAgent": "clawd-invest"}'
+```
 
-文件是 Agent 知識與記憶的載體。
+三種狀態：`idle`（閒置）→ `thinking`（規劃中）→ `acting`（執行中）
 
-- **Workspace Root**: `path.join(__dirname, '../../..', 'workspace')`
-- **分類**：
-    - **System**: Workspace 下的 `.md` 文件（唯讀）
-    - **Docs**: `backend/docs` 目錄下的文件（可讀寫，用於記錄 Integration Log 等）
+**如果 Agent 沒有打這些 API，Dashboard 上的狀態燈就不會動。**
+
+### 3. 任務看板 — 透過 Webhook 驅動
+
+```bash
+# 新任務進來
+curl -X POST http://localhost:3001/api/webhook/message \
+  -H "Content-Type: application/json" \
+  -d '{"text": "幫我翻譯這份文件", "stage": "received"}'
+
+# 任務開始
+curl -X POST http://localhost:3001/api/webhook/message \
+  -H "Content-Type: application/json" \
+  -d '{"stage": "started", "taskId": 1}'
+
+# 任務完成
+curl -X POST http://localhost:3001/api/webhook/message \
+  -H "Content-Type: application/json" \
+  -d '{"stage": "completed", "taskId": 1}'
+```
+
+| stage | 動作 |
+|:---|:---|
+| `received` | 建立新 Task（狀態 `todo`）|
+| `started` | Task 狀態變 `in_progress` |
+| `completed` | Task 狀態變 `done` |
+
+### 4. 文件瀏覽 — 遞迴掃描 WORKSPACE_ROOT
+
+設定 `WORKSPACE_ROOT=/home/david/project`，Dashboard 會遞迴掃描該目錄下所有 `.md` 檔案：
+
+```
+/home/david/project/          ← WORKSPACE_ROOT
+├── clawd/MEMORY.md            ✅ 顯示
+├── clawd-voice/README.md      ✅ 顯示
+├── clawd-invest/notes.md      ✅ 顯示
+├── ClawDashboard/             ⚠️ 只讀 records/ 子目錄
+└── node_modules/              ❌ 自動排除
+```
+
+自動排除的目錄：`node_modules`、`.git`、`dist`、`build` 等。
 
 ---
 
