@@ -71,8 +71,7 @@ setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 fin
 
 複製以下提示詞，貼給你的 AI Agent（OpenClaw 或其他）：
 
-<details>
-<summary>📋 中文提示詞 — 安裝 (Chinese: Install)</summary>
+#### 📋 中文提示詞 — 安裝
 
 > 請幫我安裝 Claw Dashboard。
 >
@@ -91,10 +90,7 @@ setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 fin
 > - Port 衝突腳本會自動處理
 > - 支援 Linux（x86/ARM/Raspberry Pi）和 macOS
 
-</details>
-
-<details>
-<summary>📋 English Prompt — Install</summary>
+#### 📋 English Prompt — Install
 
 > Please install Claw Dashboard for me.
 >
@@ -113,10 +109,7 @@ setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 fin
 > - Port conflicts are auto-resolved by the script
 > - Supports Linux (x86/ARM/Raspberry Pi) and macOS
 
-</details>
-
-<details>
-<summary>📋 更新 / 切換 / 移除 (Update / Switch / Uninstall)</summary>
+#### 📋 更新 / 切換 / 移除 (Update / Switch / Uninstall)
 
 > **注意**：以下指令請先 `cd` 到 ClawDashboard 的安裝目錄再執行。
 
@@ -134,8 +127,6 @@ setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 fin
 > 1. 刪除 `memory/` 下所有 `claw-dashboard` 相關檔案
 > 2. 從 `MEMORY.md` 移除 ClawDashboard 相關索引
 > 3. 確認記憶已清理乾淨」
-
-</details>
 
 ---
 
