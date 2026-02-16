@@ -1,32 +1,48 @@
 # 🦞 Claw Dashboard
 
-一個簡潔、高效的本地 AI Agent 儀表板，整合了任務管理、狀態追蹤與自動化文件同步功能。
+一個專為 AI Agent 設計的即時儀表板，讓 Agent 的所有行為**可視化、可追蹤、可回放**。
 
-核心理念：**所有 Agent 行為都必須可視化、可追蹤、可回放**，形成 `Agent` → `Status` → `Task` → `Docs` → `UI` 的完整閉環系統。
+核心閉環：`Agent` → `Status` → `Task` → `Docs` → `UI`
 
+---
 
+## ✨ 功能一覽 (Features)
 
-# tbdavid2019更改
+### 🖥️ 即時狀態面板 (Real-time Dashboard)
+- **多 Agent 並行追蹤** — 同時顯示多個 Agent（Coder、Architect、Reviewer…）的即時狀態
+- **三色狀態燈** — `idle` 閒置（綠）、`thinking` 思考中（黃色呼吸燈）、`acting` 執行中（紅）
+- **SSE 即時推播** — 所有狀態變更即時反映到前端，無需手動刷新
 
-已升級為 **Multi-Agent Team View (多重 Agent 並行視角)**，不再侷限於單一 Agent 的狀態顯示。
+### 📋 任務看板 (Task Kanban)
+- **Webhook 驅動** — 外部系統（如 Telegram Bot）可自動建立、更新任務
+- **狀態流轉** — `todo` → `in_progress` → `done`
+- **任務優先級** — 支援排序與手動調整
+- **批次刪除** — 一鍵清理已完成任務
 
-### ✨ 新增功能
-1.  **並行狀態追蹤 (Concurrency Tracking)**
-    -   後端新增 `agent_states` 資料表，可獨立記錄每個 Agent (如 `Coder`, `Architect`, `Reviewer`) 的即時狀態。
-    -   即使多個 Agent 同時工作，狀態燈也能正確反映各自的進度。
+### 📄 文件 / 知識庫 (Docs & Knowledge Base)
+- **雙來源整合** — 顯示 `backend/docs/` 的可編輯文件 + `workspace/` 下的 Markdown 唯讀文件
+- **文件釘選 & 排序** — 重要文件置頂
+- **線上編輯** — 直接在 Dashboard 中編輯、建立文件
+- **檔案上傳** — 支援上傳 Markdown 檔案
+- **Agent 長期記憶載體** — 文件即知識，Agent 可讀取建立記憶
 
-2.  **視覺化升級 (Visual Enhancements)**
-    -   **Thinking (思考中)**: 新增黃色呼吸燈動畫 🟡，與執行中的紅色燈號 🔴 做區隔。
-    -   側邊欄現在會優先顯示個別 Agent 的狀態，而非全域狀態。
+### 📊 模型用量追蹤 (Model Usage Tracker)
+- 追蹤各 AI Provider / Model 的用量百分比
+- 支援 CD (Cooldown) 計時顯示
 
-3.  **API 更新**
-    -   `POST /api/status/agent`: 供 Agent 回報個別狀態。
-    -   `GET /api/status`: 回傳資料新增 `agents` 欄位，包含所有成員的最新動態。
+### 🔌 Webhook & API 整合
+- **Webhook 自動任務化** — `POST /api/webhook/message` 自動將訊息轉為 Task
+- **完整 REST API** — Status / Task / Docs / Agent / Models / Logs / Sync
+- **資料匯入匯出** — `GET /api/sync/export` / `POST /api/sync/import`
+
+### 🌐 其他
+- **i18n 多語言** — 支援中文 / English 界面切換
+- **Server-Sent Events (SSE)** — 全局事件匯流排，前端即時更新
+- **SQLite 輕量儲存** — 零配置資料庫，單檔 `bot.db`
+- **跨平台部署** — Linux (x86 / ARM / Raspberry Pi) + macOS
+- **一鍵安裝** — `setup.sh` 全自動（含 OS 偵測、Port 衝突處理、防火牆檢查）
 
 ## 🚀 快速開始
-
-### 感謝原作者
-[Ry7no/ClawDashboard](https://github.com/Ry7no/ClawDashboard)
 
 ---
 
@@ -283,7 +299,8 @@ graph TD
 
 ---
 
-## 📝 License
 
-MIT
+### 感謝原作者
+[Ry7no/ClawDashboard](https://github.com/Ry7no/ClawDashboard)
+
 
