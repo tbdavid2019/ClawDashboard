@@ -249,7 +249,6 @@ const initDatabase = async () => {
     try { await dbRun('ALTER TABLE status ADD COLUMN active_agent TEXT DEFAULT \'Claw\''); } catch (e) { }
     try { await dbRun('ALTER TABLE status ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP'); } catch (e) { }
     try { await dbRun('ALTER TABLE documents ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch (e) { }
-    try { await dbRun('ALTER TABLE documents ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch (e) { }
     try { await dbRun('ALTER TABLE documents ADD COLUMN sort_order INTEGER DEFAULT 0'); } catch (e) { }
 
     await dbRun(`

@@ -69,9 +69,12 @@ GET /api/agents\
 
 ## Frontend
 
--   呼叫 /api/agents
+-   呼叫 /api/agents (agent 列表)
+-   呼叫 /api/status (含 agents map，各 agent 獨立狀態)
 -   若為空不顯示 Team Status
--   busy/standby 依 activeAgent + status
+-   優先以 agentStates[name] 判斷個別狀態
+-   fallback: activeAgent + global status
+-   三種顯示: busy (acting) / thinking / standby (idle)
 
 ------------------------------------------------------------------------
 

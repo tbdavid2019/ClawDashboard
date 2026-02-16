@@ -21,7 +21,9 @@
 
 3.  **API 更新**
     -   `POST /api/status/agent`: 供 Agent 回報個別狀態。
-    -   `GET /api/status`: 回傳資料新增 `agents` 欄位，包含所有成員的最新動態。## 🚀 快速開始
+    -   `GET /api/status`: 回傳資料新增 `agents` 欄位，包含所有成員的最新動態。
+
+## 🚀 快速開始
 
 ### 感謝原作者
 [Ry7no/ClawDashboard](https://github.com/Ry7no/ClawDashboard)
@@ -120,8 +122,9 @@ graph TD
 
 | Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/status` | 獲取當前狀態與活躍 Agent |
-| `PUT` | `/api/status` | 更新狀態 (`state`: `idle`/`thinking`/`acting`) |
+| `GET` | `/api/status` | 獲取當前狀態、活躍 Agent 與所有 Agent 個別狀態 |
+| `PUT` | `/api/status` | 更新全域狀態 (`state`: `idle`/`thinking`/`acting`) |
+| `POST` | `/api/status/agent` | 更新個別 Agent 狀態 (`name` + `state`) |
 
 ### Task API
 
