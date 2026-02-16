@@ -125,10 +125,16 @@ function loadAgentsFromConfig() {
 }
 
 // ========== MIDDLEWARE ==========
+const corsOrigins = (process.env.CORS_ORIGINS || '*').trim();
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like curl) or from localhost
-    if (!origin || origin.startsWith('http://localhost')) {
+    // No origin = server-to-server (curl, etc) — always allow
+    if (!origin) return callback(null, true);
+    // Wildcard = allow everything (default, safe for local/LAN)
+    if (corsOrigins === '*') return callback(null, true);
+    // Check whitelist
+    const allowed = corsOrigins.split(',').map(s => s.trim());
+    if (allowed.some(a => origin.startsWith(a))) {
       return callback(null, true);
     }
     callback(new Error('Not allowed by CORS'));
