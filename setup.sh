@@ -5,9 +5,11 @@
 # Supports: Linux (x86/ARM/Raspberry Pi) / macOS
 #
 # Usage:
-#   Interactive:   bash setup.sh
-#   Local mode:    bash setup.sh --local
-#   LAN mode:      bash setup.sh --lan
+#   Install:       bash setup.sh              (interactive)
+#                  bash setup.sh --local       (local mode)
+#                  bash setup.sh --lan         (LAN mode)
+#   Update:        bash setup.sh --update
+#   Uninstall:     bash setup.sh --uninstall
 #   Remote (curl): bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --lan
 # ==================================================
 
@@ -163,9 +165,258 @@ check_health() {
 }
 
 # ============================================
+# UPDATE Command
+# ============================================
+do_update() {
+  WORKSPACE="$HOME/.openclaw/workspace"
+  PROJECT_DIR="$WORKSPACE/ClawDashboard"
+
+  if [ ! -d "$PROJECT_DIR" ]; then
+    echo "❌ ClawDashboard not found at ${PROJECT_DIR}"
+    echo "   Run setup.sh without --update to install first."
+    exit 1
+  fi
+
+  echo ""
+  echo "🔄 Claw Dashboard — Update"
+  echo "=================================================="
+
+  cd "$PROJECT_DIR"
+
+  echo "📥 Pulling latest code..."
+  git pull || { echo "❌ git pull failed!"; exit 1; }
+
+  echo "📦 Updating dependencies..."
+  (cd backend && npm install --silent 2>&1) || { echo "❌ Backend install failed!"; exit 1; }
+  (cd frontend && npm install --silent 2>&1) || { echo "❌ Frontend install failed!"; exit 1; }
+
+  echo "🔄 Restarting services..."
+  if command -v pm2 &>/dev/null; then
+    pm2 restart claw-backend claw-frontend 2>/dev/null || {
+      echo "⚠️  PM2 restart failed. Try: ./start.sh --bg"
+    }
+  else
+    echo "⚠️  PM2 not found. Restart manually: ./start.sh --bg"
+  fi
+
+  echo ""
+  echo "✅ Update complete!"
+  echo "   pm2 status — check services"
+  echo "   pm2 logs   — check for errors"
+  echo "=================================================="
+}
+
+# ============================================
+# UNINSTALL Command
+# ============================================
+do_uninstall() {
+  WORKSPACE="$HOME/.openclaw/workspace"
+  PROJECT_DIR="$WORKSPACE/ClawDashboard"
+
+  echo ""
+  echo "🗑️  Claw Dashboard — Uninstall"
+  echo "=================================================="
+
+  # Stop PM2 services
+  if command -v pm2 &>/dev/null; then
+    echo "🛑 Stopping services..."
+    pm2 stop claw-backend claw-frontend 2>/dev/null || true
+    pm2 delete claw-backend claw-frontend 2>/dev/null || true
+    pm2 save 2>/dev/null || true
+    echo "   ✅ PM2 services removed"
+  fi
+
+  # Warn about database
+  if [ -f "$PROJECT_DIR/backend/bot.db" ]; then
+    echo ""
+    echo "   ⚠️  Database found: ${PROJECT_DIR}/backend/bot.db"
+    echo "   This contains your tasks, logs, and agent states."
+    if [ -t 0 ]; then
+      read -r -p "   Backup database before deleting? [Y/n]: " backup_choice
+      case "$backup_choice" in
+        n|N|no|NO) ;;
+        *)
+          BACKUP_PATH="$HOME/claw-dashboard-backup-$(date +%Y%m%d%H%M%S).db"
+          cp "$PROJECT_DIR/backend/bot.db" "$BACKUP_PATH"
+          echo "   ✅ Database backed up to: ${BACKUP_PATH}"
+          ;;
+      esac
+    fi
+  fi
+
+  # Remove project
+  if [ -d "$PROJECT_DIR" ]; then
+    if [ -t 0 ]; then
+      read -r -p "Delete project files at ${PROJECT_DIR}? [y/N]: " confirm
+    else
+      confirm="y"
+    fi
+
+    case "$confirm" in
+      y|Y|yes|YES)
+        rm -rf "$PROJECT_DIR"
+        echo "   ✅ Project files deleted"
+        ;;
+      *)
+        echo "   ⏭️  Project files kept at ${PROJECT_DIR}"
+        ;;
+    esac
+  fi
+
+  echo ""
+  echo "✅ Uninstall complete!"
+  echo ""
+  echo "   Note: PM2 itself was NOT removed."
+  echo "   To remove PM2: npm uninstall -g pm2"
+  echo "   To remove boot startup: pm2 unstartup"
+  echo "=================================================="
+}
+
+# ============================================
+# STATUS Command
+# ============================================
+do_status() {
+  WORKSPACE="$HOME/.openclaw/workspace"
+  PROJECT_DIR="$WORKSPACE/ClawDashboard"
+
+  echo ""
+  echo "📋 Claw Dashboard — Status"
+  echo "=================================================="
+
+  if [ ! -d "$PROJECT_DIR" ]; then
+    echo "   ❌ Not installed (expected at ${PROJECT_DIR})"
+    echo "=================================================="
+    exit 1
+  fi
+  echo "   📁 Project: ${PROJECT_DIR}"
+
+  # Read .env
+  local host="127.0.0.1"
+  if [ -f "$PROJECT_DIR/backend/.env" ]; then
+    host=$(grep -E '^HOST=' "$PROJECT_DIR/backend/.env" 2>/dev/null | cut -d'=' -f2 | tr -d ' "'"'" || echo "127.0.0.1")
+  fi
+
+  if [ "$host" = "0.0.0.0" ]; then
+    local lan_ip
+    lan_ip=$(detect_lan_ip | tr -d '[:space:]')
+    echo "   📡 Mode: LAN (${lan_ip:-unknown})"
+    echo "   🌐 Dashboard: http://${lan_ip:-localhost}:5173"
+    echo "   🔌 API:       http://${lan_ip:-localhost}:3001"
+  else
+    echo "   📡 Mode: Local"
+    echo "   🌐 Dashboard: http://localhost:5173"
+    echo "   🔌 API:       http://localhost:3001"
+  fi
+
+  # PM2 status
+  if command -v pm2 &>/dev/null; then
+    echo ""
+    pm2 status 2>/dev/null | grep -E 'claw-|name' || echo "   PM2: no claw services found"
+  else
+    echo "   PM2: not installed"
+  fi
+
+  # Database size
+  if [ -f "$PROJECT_DIR/backend/bot.db" ]; then
+    local db_size
+    db_size=$(du -h "$PROJECT_DIR/backend/bot.db" 2>/dev/null | awk '{print $1}')
+    echo ""
+    echo "   💾 Database: ${db_size} (${PROJECT_DIR}/backend/bot.db)"
+  fi
+
+  echo "=================================================="
+}
+
+# ============================================
+# SWITCH MODE Command
+# ============================================
+do_switch() {
+  local target_mode=$1
+  WORKSPACE="$HOME/.openclaw/workspace"
+  PROJECT_DIR="$WORKSPACE/ClawDashboard"
+
+  if [ ! -d "$PROJECT_DIR" ]; then
+    echo "❌ Not installed. Run setup.sh first."
+    exit 1
+  fi
+
+  cd "$PROJECT_DIR"
+
+  echo ""
+  echo "🔀 Switching to ${target_mode} mode..."
+
+  if [ "$target_mode" = "lan" ]; then
+    case "$OS" in
+      macos) sed -i '' 's/^HOST=127.0.0.1/HOST=0.0.0.0/' backend/.env ;;
+      *)     sed -i 's/^HOST=127.0.0.1/HOST=0.0.0.0/' backend/.env ;;
+    esac
+  else
+    case "$OS" in
+      macos) sed -i '' 's/^HOST=0.0.0.0/HOST=127.0.0.1/' backend/.env ;;
+      *)     sed -i 's/^HOST=0.0.0.0/HOST=127.0.0.1/' backend/.env ;;
+    esac
+  fi
+
+  # Restart if PM2 is running
+  if command -v pm2 &>/dev/null && pm2 list 2>/dev/null | grep -q 'claw-'; then
+    echo "🔄 Restarting services..."
+    pm2 stop claw-backend claw-frontend 2>/dev/null || true
+    pm2 delete claw-backend claw-frontend 2>/dev/null || true
+
+    local vite_host="127.0.0.1"
+    [ "$target_mode" = "lan" ] && vite_host="0.0.0.0"
+    export VITE_HOST="$vite_host"
+    export VITE_PORT="5173"
+    pm2 start pm2.ecosystem.config.js
+    pm2 save 2>/dev/null || true
+  fi
+
+  echo ""
+  echo "✅ Switched to ${target_mode} mode!"
+  if [ "$target_mode" = "lan" ]; then
+    local lan_ip
+    lan_ip=$(detect_lan_ip | tr -d '[:space:]')
+    echo "   🌐 Dashboard: http://${lan_ip:-localhost}:5173"
+  else
+    echo "   🌐 Dashboard: http://localhost:5173"
+  fi
+  echo "=================================================="
+}
+
+# ============================================
+# HELP
+# ============================================
+show_help() {
+  echo "Usage: bash setup.sh [OPTION]"
+  echo ""
+  echo "Install:"
+  echo "  (none)          Interactive (asks local/LAN)"
+  echo "  --local         Local mode (localhost only)"
+  echo "  --lan           LAN mode (network accessible)"
+  echo ""
+  echo "Manage:"
+  echo "  --update        Pull latest code & restart"
+  echo "  --status        Show service status & URLs"
+  echo "  --switch-local  Switch to local mode"
+  echo "  --switch-lan    Switch to LAN mode"
+  echo "  --uninstall     Stop services & remove project"
+  echo "  --help          Show this help"
+}
+
+# ============================================
 # MAIN
 # ============================================
 detect_os
+
+# Route commands
+case "${1:-}" in
+  --update)       do_update; exit 0 ;;
+  --status)       do_status; exit 0 ;;
+  --switch-local) do_switch local; exit 0 ;;
+  --switch-lan)   do_switch lan; exit 0 ;;
+  --uninstall)    do_uninstall; exit 0 ;;
+  --help|-h)      show_help; exit 0 ;;
+esac
 
 echo ""
 echo "🦞 Claw Dashboard — Auto Setup"

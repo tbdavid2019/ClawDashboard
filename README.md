@@ -35,7 +35,7 @@
 複製以下提示詞，貼給你的 AI Agent（OpenClaw 或其他）：
 
 <details>
-<summary>📋 中文提示詞 (Chinese Prompt)</summary>
+<summary>📋 中文提示詞 — 安裝 (Chinese: Install)</summary>
 
 > 請幫我安裝 Claw Dashboard。
 >
@@ -43,36 +43,49 @@
 > 1. 我想要「本地模式」（只有這台電腦可看到）還是「區網模式」（其他電腦也能連進來看）？
 >
 > **確認後請執行：**
-> 1. 執行安裝指令：`bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` 或 `--lan`（根據我的選擇）
-> 2. 如果安裝過程有任何錯誤，請讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` 來排除問題
-> 3. 安裝完成後，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/` 下所有 `.md` 檔案並存入長記憶
-> 4. 告訴我 Dashboard 的存取網址
+> 1. 執行：`bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` 或 `--lan`（根據我的選擇）
+> 2. 如果有錯誤，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` 排除問題
+> 3. 安裝完成後，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/` 下所有 `.md` 檔並存入長記憶
+> 4. 告訴我 Dashboard 網址
 >
-> **注意事項：**
-> - Frontend port 固定為 5173（Vite），Backend port 固定為 3001
-> - 如果遇到 port 衝突，腳本會自動處理；如果仍有問題，查看 Troubleshooting.md
-> - 支援 Linux (x86/ARM/Raspberry Pi) 和 macOS
+> **重要：**
+> - Frontend port = 5173（Vite）、Backend port = 3001，不要亂改
+> - Port 衝突腳本會自動處理
+> - 支援 Linux（x86/ARM/Raspberry Pi）和 macOS
 
 </details>
 
 <details>
-<summary>📋 English Prompt</summary>
+<summary>📋 English Prompt — Install</summary>
 
 > Please install Claw Dashboard for me.
 >
 > **Before installing, ask me:**
-> 1. Do I want "local mode" (only this machine can access) or "LAN mode" (other machines on the network can connect)?
+> 1. Do I want "local mode" (only this machine) or "LAN mode" (other machines can connect)?
 >
-> **After I answer, run:**
-> 1. Run: `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` or `--lan` (based on my choice)
-> 2. If any errors occur, read `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` for solutions
-> 3. After installation, read all `.md` files in `~/.openclaw/workspace/ClawDashboard/backend/docs/` and save to long memory
+> **Then run:**
+> 1. `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` or `--lan`
+> 2. On errors, read `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md`
+> 3. After install, read all `.md` in `~/.openclaw/workspace/ClawDashboard/backend/docs/` → save to long memory
 > 4. Tell me the Dashboard URL
 >
-> **Notes:**
-> - Frontend port is 5173 (Vite), Backend port is 3001
-> - The script auto-handles port conflicts; if issues persist, see Troubleshooting.md
+> **Important:**
+> - Frontend port = 5173 (Vite), Backend port = 3001 — do NOT change these
+> - Port conflicts are auto-resolved by the script
 > - Supports Linux (x86/ARM/Raspberry Pi) and macOS
+
+</details>
+
+<details>
+<summary>📋 更新 / 切換 / 移除 (Update / Switch / Uninstall)</summary>
+
+| 場景 | 提示詞 |
+|:---|:---|
+| 🔄 更新到最新版 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --update` |
+| 📋 查看狀態 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --status` |
+| 🔀 切換到區網模式 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --switch-lan` |
+| 🔀 切換到本地模式 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --switch-local` |
+| 🗑️ 完全移除 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --uninstall` |
 
 </details>
 
@@ -124,16 +137,26 @@ pm2 save
 
 ---
 
-### 📋 PM2 管理指令
+### 📋 管理指令
 
 | 指令 | 功能 |
 | :--- | :--- |
-| `./start.sh --bg` | 背景啟動 |
-| `./start.sh --stop` | 停止服務 |
-| `./start.sh --status` | 查看狀態 |
+| **安裝 & 啟動** | |
+| `bash setup.sh` | 互動式安裝（會問 local/LAN）|
+| `bash setup.sh --local` | 安裝（本地模式）|
+| `bash setup.sh --lan` | 安裝（區網模式）|
+| `./start.sh --bg` | PM2 背景啟動 |
 | `./start.sh --boot` | 設定開機自啟 |
+| **日常管理** | |
+| `bash setup.sh --status` | 查看狀態、URL、DB 大小 |
+| `bash setup.sh --update` | 更新到最新版並重啟 |
+| `bash setup.sh --switch-lan` | 切換到區網模式 |
+| `bash setup.sh --switch-local` | 切換到本地模式 |
+| `./start.sh --stop` | 停止服務 |
 | `pm2 logs` | 即時日誌 |
 | `pm2 restart all` | 重啟服務 |
+| **移除** | |
+| `bash setup.sh --uninstall` | 停止 + 備份 DB + 刪除 |
 
 ---
 
