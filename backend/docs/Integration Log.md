@@ -15,9 +15,11 @@
 ### 後端
 
 -   SQLite table: status (state, active_agent)
+-   SQLite table: agent_states (name, state, updated_at)
 -   API:
     -   GET /api/status
-    -   PUT /api/status
+    -   PUT /api/status (Global Status)
+    -   POST /api/status/agent (Individual Agent Status)
 
 ------------------------------------------------------------------------
 

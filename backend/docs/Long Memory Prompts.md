@@ -17,3 +17,6 @@ Workspace 下所有 .md 會自動掃描並顯示於 Docs（workspace 視為 Syst
 -   Step 5：task 完成 → done - POST /api/webhook/message payload {
     "taskId":`<id>`{=html}, "stage":"completed" }
 -   Step 6：完成 → idle - PUT /api/status payload { "state":"idle" }
+-   (Optional) Multi-Agent Status:
+    -   Agent A Thinking: POST /api/status/agent { "name": "Architect", "state": "thinking" }
+    -   Agent B Acting: POST /api/status/agent { "name": "Coder", "state": "acting" }
