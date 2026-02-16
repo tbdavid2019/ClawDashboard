@@ -8,6 +8,7 @@
 #   Install:       bash setup.sh              (interactive)
 #                  bash setup.sh --local       (local mode)
 #                  bash setup.sh --lan         (LAN mode)
+#                  bash setup.sh --local --workspace /path/to/workspaces
 #   Update:        bash setup.sh --update
 #   Uninstall:     bash setup.sh --uninstall
 #   Remote (curl): bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --lan
@@ -390,9 +391,10 @@ show_help() {
   echo "Usage: bash setup.sh [OPTION]"
   echo ""
   echo "Install:"
-  echo "  (none)          Interactive (asks local/LAN)"
+  echo "  (none)          Interactive (asks local/LAN + workspace)"
   echo "  --local         Local mode (localhost only)"
   echo "  --lan           LAN mode (network accessible)"
+  echo "  --workspace DIR Agent workspace directory (for Docs tab)"
   echo ""
   echo "Manage:"
   echo "  --update        Pull latest code & restart"
@@ -463,9 +465,64 @@ fi
 echo "   ✅ git"
 
 # ---- Network Mode ----
-select_network_mode "$1"
+# Parse --workspace from args
+WORKSPACE_PATH=""
+ARGS_FOR_MODE=""
+for arg in "$@"; do
+  case "$arg" in
+    --workspace) WORKSPACE_FLAG_NEXT=1 ;;
+    *)
+      if [ "${WORKSPACE_FLAG_NEXT:-}" = "1" ]; then
+        WORKSPACE_PATH="$arg"
+        WORKSPACE_FLAG_NEXT=0
+      else
+        ARGS_FOR_MODE="$arg"
+      fi
+      ;;
+  esac
+done
+
+select_network_mode "$ARGS_FOR_MODE"
 echo ""
 echo "   📡 Mode: ${NET_MODE}"
+
+# ---- Workspace Path ----
+if [ -z "$WORKSPACE_PATH" ]; then
+  if [ -t 0 ]; then
+    echo ""
+    echo "📂 你的 Agent 工作目錄在哪裡？"
+    echo "   Where are your Agent workspaces located?"
+    echo ""
+    echo "   例如 / Example:"
+    echo "     /home/david/project/clawd"
+    echo "     ~/.openclaw/workspace"
+    echo ""
+    read -r -p "   路徑 Path (Enter = 自動偵測 auto-detect): " WORKSPACE_PATH
+  fi
+fi
+
+# Auto-detect if empty
+if [ -z "$WORKSPACE_PATH" ]; then
+  if [ -d "$HOME/.openclaw/workspace" ]; then
+    WORKSPACE_PATH="$HOME/.openclaw/workspace"
+    echo "   📂 Auto-detected: ${WORKSPACE_PATH}"
+  else
+    WORKSPACE_PATH="$HOME/.openclaw/workspace"
+    echo "   📂 Using default: ${WORKSPACE_PATH}"
+  fi
+else
+  # Expand ~
+  WORKSPACE_PATH="${WORKSPACE_PATH/#\~/$HOME}"
+  echo "   📂 Workspace: ${WORKSPACE_PATH}"
+fi
+
+# Auto-detect openclaw.json
+OPENCLAW_JSON=""
+if [ -f "$HOME/.openclaw/openclaw.json" ]; then
+  OPENCLAW_JSON="$HOME/.openclaw/openclaw.json"
+elif [ -f "$(dirname "$WORKSPACE_PATH")/openclaw.json" ]; then
+  OPENCLAW_JSON="$(dirname "$WORKSPACE_PATH")/openclaw.json"
+fi
 
 # ---- Clone or Update ----
 WORKSPACE="$HOME/.openclaw/workspace"
@@ -537,6 +594,32 @@ else
   API_URL="http://localhost:${BACKEND_PORT}"
 fi
 echo "   ✅ .env configured (${NET_MODE} mode)"
+
+# Write workspace paths to .env
+if ! grep -q '^WORKSPACE_ROOT=' backend/.env 2>/dev/null; then
+  echo "" >> backend/.env
+  echo "# Workspace root (Docs tab reads .md files from here)" >> backend/.env
+  echo "WORKSPACE_ROOT=${WORKSPACE_PATH}" >> backend/.env
+else
+  case "$OS" in
+    macos) sed -i '' "s|^WORKSPACE_ROOT=.*|WORKSPACE_ROOT=${WORKSPACE_PATH}|" backend/.env ;;
+    *)     sed -i "s|^WORKSPACE_ROOT=.*|WORKSPACE_ROOT=${WORKSPACE_PATH}|" backend/.env ;;
+  esac
+fi
+
+if [ -n "$OPENCLAW_JSON" ]; then
+  if ! grep -q '^OPENCLAW_CONFIG=' backend/.env 2>/dev/null; then
+    echo "# OpenClaw config (Agent list)" >> backend/.env
+    echo "OPENCLAW_CONFIG=${OPENCLAW_JSON}" >> backend/.env
+  else
+    case "$OS" in
+      macos) sed -i '' "s|^OPENCLAW_CONFIG=.*|OPENCLAW_CONFIG=${OPENCLAW_JSON}|" backend/.env ;;
+      *)     sed -i "s|^OPENCLAW_CONFIG=.*|OPENCLAW_CONFIG=${OPENCLAW_JSON}|" backend/.env ;;
+    esac
+  fi
+  echo "   ✅ OPENCLAW_CONFIG=${OPENCLAW_JSON}"
+fi
+echo "   ✅ WORKSPACE_ROOT=${WORKSPACE_PATH}"
 
 # ---- Install PM2 & Start ----
 echo ""

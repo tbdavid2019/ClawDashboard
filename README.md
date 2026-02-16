@@ -55,11 +55,12 @@
 
 > 請幫我安裝 Claw Dashboard。
 >
-> **安裝前請先問我：**
+> **安裝前請先問我兩件事：**
 > 1. 我想要「本地模式」（只有這台電腦可看到）還是「區網模式」（其他電腦也能連進來看）？
+> 2. 我的 Agent 工作目錄在哪裡？（例如 `/home/david/project/clawd`、`~/.openclaw/workspace`）
 >
 > **確認後請執行：**
-> 1. 執行：`bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` 或 `--lan`（根據我的選擇）
+> 1. 執行：`bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local --workspace /用戶提供的路徑` 或 `--lan --workspace /用戶提供的路徑`
 > 2. 如果有錯誤，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` 排除問題
 > 3. 安裝完成後，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/` 下所有 `.md` 檔並存入長記憶
 > 4. 告訴我 Dashboard 網址
@@ -78,9 +79,10 @@
 >
 > **Before installing, ask me:**
 > 1. Do I want "local mode" (only this machine) or "LAN mode" (other machines can connect)?
+> 2. Where is my Agent workspace directory? (e.g. `/home/david/project/clawd`, `~/.openclaw/workspace`)
 >
 > **Then run:**
-> 1. `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` or `--lan`
+> 1. `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local --workspace /user-provided-path` or `--lan --workspace /user-provided-path`
 > 2. On errors, read `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md`
 > 3. After install, read all `.md` in `~/.openclaw/workspace/ClawDashboard/backend/docs/` → save to long memory
 > 4. Tell me the Dashboard URL
