@@ -289,6 +289,8 @@ graph TD
 | `DB_PATH` | `bot.db` | SQLite 資料庫路徑 |
 | `DOCS_DIR` | `docs` | 文件存放目錄名稱 |
 | `CORS_ORIGINS` | `*` | CORS 白名單。`*` = 允許全部，或逗號分隔的來源列表 |
+| `OPENCLAW_CONFIG` | (自動偵測) | `openclaw.json` 路徑，用於 Agent 列表。自動搜尋 `.openclaw/` 目錄 |
+| `WORKSPACE_ROOT` | (自動偵測) | Docs 頁籤讀取的根目錄。自動使用 `.openclaw/workspace/` |
 
 ### Frontend (`frontend/.env`)
 

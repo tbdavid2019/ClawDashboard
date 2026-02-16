@@ -10,8 +10,27 @@ const EventEmitter = require('events');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Auto-detect .openclaw directory by walking up from backend/
+function findOpenclawDir() {
+  let dir = __dirname;
+  for (let i = 0; i < 5; i++) {
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // reached filesystem root
+    dir = parent;
+    // Check if this dir IS .openclaw (e.g. ~/.openclaw/workspace/ClawDashboard/backend → ~/.openclaw)
+    if (path.basename(dir) === '.openclaw') return dir;
+    // Check if .openclaw exists as a sibling
+    const sibling = path.join(dir, '.openclaw');
+    if (fs.pathExistsSync(sibling)) return sibling;
+  }
+  return null;
+}
+
+const openclawDir = findOpenclawDir();
+
 // OpenClaw config (for agent list)
-const OPENCLAW_CONFIG = process.env.OPENCLAW_CONFIG || path.join(__dirname, '../../..', 'openclaw.json');
+const OPENCLAW_CONFIG = process.env.OPENCLAW_CONFIG
+  || (openclawDir ? path.join(openclawDir, 'openclaw.json') : path.join(__dirname, '..', 'openclaw.json'));
 
 // ========== REALTIME EVENTS (SSE) ==========
 const events = new EventEmitter();
@@ -25,7 +44,9 @@ const dbPath = path.isAbsolute(process.env.DB_PATH || 'bot.db')
   ? process.env.DB_PATH
   : path.join(__dirname, process.env.DB_PATH || 'bot.db');
 const db = new sqlite3.Database(dbPath);
-console.log('Using SQLite database');
+console.log('📂 Resolved paths:');
+console.log(`   DB:              ${dbPath}`);
+console.log(`   OpenClaw config: ${OPENCLAW_CONFIG}`);
 
 // Local documents storage
 const docsDir = path.isAbsolute(process.env.DOCS_DIR || 'docs')
@@ -34,8 +55,11 @@ const docsDir = path.isAbsolute(process.env.DOCS_DIR || 'docs')
 fs.ensureDirSync(docsDir);
 
 // Workspace markdown scan (for Docs tab)
-const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || path.join(__dirname, '../../..', 'workspace');
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT
+  || (openclawDir ? path.join(openclawDir, 'workspace') : path.join(__dirname, '..', '..'));
 const WORKSPACE_EXCLUDE = new Set(['node_modules', '.git', '.openclaw', 'dist', 'build', 'ClawDashboard']);
+console.log(`   Docs dir:        ${docsDir}`);
+console.log(`   Workspace root:  ${WORKSPACE_ROOT}`);
 
 async function listWorkspaceMarkdown() {
   const results = [];
