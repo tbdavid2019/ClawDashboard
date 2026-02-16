@@ -375,8 +375,37 @@ curl -X POST http://localhost:3001/api/webhook/message \
 
 ---
 
+## ⚠️ 已知問題與設計限制 (Known Issues)
+
+此專案為 MVP 等級，以下為已知的架構瑕疵，計劃在 ClawDashboard2 中重新設計解決。
+
+### 1. 被動架構 — Agent 必須主動打 API
+
+Dashboard 不會主動偵測 Agent 狀態。每個 Agent 必須自己呼叫 `POST /api/status/agent` 和 `POST /api/webhook/message` 來回報。
+
+**問題**：如果 Agent 沒有被教會打這些 API，Dashboard 就是一片空白。
+
+**理想做法**：Dashboard 應主動掃描檔案系統（監控各 workspace 的檔案變動、讀取 agent log），無需 Agent 配合。
+
+### 2. 新 Agent 不會自動知道 Dashboard
+
+安裝 Dashboard 後，只有 main agent 讀了 `backend/docs/*.md` 知道怎麼整合。
+日後新增的 sub-agent **不會自動繼承這些知識**。
+
+**問題**：新建 clawd-newagent 後，它完全不知道要回報狀態給 Dashboard。
+
+**目前 workaround**：在 main agent 的 `MEMORY.md` 裡加規則——「建立新 sub-agent 時，必須告訴它 Dashboard API 用法」。
+
+### 3. 已完成 Task 無限積累
+
+所有 Task 永久保存在 SQLite `bot.db`，沒有自動清理機制。
+長期使用後 DB 會持續增長。
+
+**問題**：沒有自動歸檔、過期刪除、或「清除已完成」按鈕。
+
+**目前 workaround**：手動刪除 — `sqlite3 bot.db "DELETE FROM tasks WHERE status='done'"`
+
+---
 
 ### 感謝原作者
 [Ry7no/ClawDashboard](https://github.com/Ry7no/ClawDashboard)
-
-
