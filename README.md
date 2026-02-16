@@ -73,41 +73,45 @@ setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 fin
 
 #### 📋 中文提示詞 — 安裝
 
-> 請幫我安裝 Claw Dashboard。
->
-> **安裝前請先問我兩件事：**
-> 1. 我想要「本地模式」（只有這台電腦可看到）還是「區網模式」（其他電腦也能連進來看）？
-> 2. 我的 Agent 工作目錄在哪裡？（例如 `/home/david/project/clawd`、`~/.openclaw/workspace`）
->
-> **確認後請執行：**
-> 1. 執行：`bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local --workspace /用戶提供的路徑` 或 `--lan --workspace /用戶提供的路徑`
-> 2. 如果有錯誤，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` 排除問題
-> 3. 安裝完成後，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/` 下所有 `.md` 檔並存入長記憶
-> 4. 告訴我 Dashboard 網址
->
-> **重要：**
-> - Frontend port = 5173（Vite）、Backend port = 3001，不要亂改
-> - Port 衝突腳本會自動處理
-> - 支援 Linux（x86/ARM/Raspberry Pi）和 macOS
+```
+請幫我安裝 Claw Dashboard。
+
+安裝前請先問我兩件事：
+1. 我想要「本地模式」（只有這台電腦可看到）還是「區網模式」（其他電腦也能連進來看）？
+2. 我的 Agent 工作目錄在哪裡？（例如 /home/david/project/clawd、~/.openclaw/workspace）
+
+確認後請執行：
+1. 執行：bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local --workspace /用戶提供的路徑 或 --lan --workspace /用戶提供的路徑
+2. 如果有錯誤，讀取 ClawDashboard/backend/docs/Troubleshooting.md 排除問題
+3. 安裝完成後，讀取 ClawDashboard/backend/docs/ 下所有 .md 檔並存入長記憶
+4. 告訴我 Dashboard 網址
+
+重要：
+- Frontend port = 5173（Vite）、Backend port = 3001，不要亂改
+- Port 衝突腳本會自動處理
+- 支援 Linux（x86/ARM/Raspberry Pi）和 macOS
+```
 
 #### 📋 English Prompt — Install
 
-> Please install Claw Dashboard for me.
->
-> **Before installing, ask me:**
-> 1. Do I want "local mode" (only this machine) or "LAN mode" (other machines can connect)?
-> 2. Where is my Agent workspace directory? (e.g. `/home/david/project/clawd`, `~/.openclaw/workspace`)
->
-> **Then run:**
-> 1. `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local --workspace /user-provided-path` or `--lan --workspace /user-provided-path`
-> 2. On errors, read `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md`
-> 3. After install, read all `.md` in `~/.openclaw/workspace/ClawDashboard/backend/docs/` → save to long memory
-> 4. Tell me the Dashboard URL
->
-> **Important:**
-> - Frontend port = 5173 (Vite), Backend port = 3001 — do NOT change these
-> - Port conflicts are auto-resolved by the script
-> - Supports Linux (x86/ARM/Raspberry Pi) and macOS
+```
+Please install Claw Dashboard for me.
+
+Before installing, ask me:
+1. Do I want "local mode" (only this machine) or "LAN mode" (other machines can connect)?
+2. Where is my Agent workspace directory? (e.g. /home/david/project/clawd, ~/.openclaw/workspace)
+
+Then run:
+1. bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local --workspace /user-provided-path  (or --lan)
+2. On errors, read ClawDashboard/backend/docs/Troubleshooting.md
+3. After install, read all .md in ClawDashboard/backend/docs/ → save to long memory
+4. Tell me the Dashboard URL
+
+Important:
+- Frontend port = 5173 (Vite), Backend port = 3001 — do NOT change these
+- Port conflicts are auto-resolved by the script
+- Supports Linux (x86/ARM/Raspberry Pi) and macOS
+```
 
 #### 📋 更新 / 切換 / 移除 (Update / Switch / Uninstall)
 
@@ -123,10 +127,12 @@ setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 fin
 
 **移除後請告訴 AI Agent（重要！避免記憶污染）：**
 
-> 「請清除所有 ClawDashboard 相關的長期記憶：
-> 1. 刪除 `memory/` 下所有 `claw-dashboard` 相關檔案
-> 2. 從 `MEMORY.md` 移除 ClawDashboard 相關索引
-> 3. 確認記憶已清理乾淨」
+```
+請清除所有 ClawDashboard 相關的長期記憶：
+1. 刪除 memory/ 下所有 claw-dashboard 相關檔案
+2. 從 MEMORY.md 移除 ClawDashboard 相關索引
+3. 確認記憶已清理乾淨
+```
 
 ---
 
