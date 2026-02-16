@@ -6,6 +6,27 @@
 
 ---
 
+# tbdavid2019修正
+
+1. CORS 阻擋 LAN 存取 ✅
+server.js 的 CORS 設定只允許 localhost，LAN 模式 http://10.0.0.10:5173 打 API 直接被擋。現在讀 CORS_ORIGINS 環境變數，預設 * 全開。
+
+2. 所有 hardcode 路徑移除 ✅
+setup.sh 裡 5 處 hardcode ~/.openclaw/workspace/ClawDashboard 全部換成 find_project_dir() 自動偵測：
+
+先看 當前目錄
+再看 script 自己的位置
+再看 PM2 執行路徑
+最後才 fallback 到常見位置
+所以不管裝在 /home/david/project/clawd/ClawDashboard 還是哪裡，cd 進去就能用。
+
+3. 安裝位置不再強制
+新安裝時 clone 到 當前目錄（不再強制 ~/.openclaw/workspace/）。
+
+
+
+
+
 ## ✨ 功能一覽 (Features)
 
 ### 🖥️ 即時狀態面板 (Real-time Dashboard)
@@ -97,13 +118,22 @@
 <details>
 <summary>📋 更新 / 切換 / 移除 (Update / Switch / Uninstall)</summary>
 
-| 場景 | 提示詞 |
+> **注意**：以下指令請先 `cd` 到 ClawDashboard 的安裝目錄再執行。
+
+| 場景 | 指令 |
 |:---|:---|
-| 🔄 更新到最新版 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --update` |
-| 📋 查看狀態 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --status` |
-| 🔀 切換到區網模式 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --switch-lan` |
-| 🔀 切換到本地模式 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --switch-local` |
-| 🗑️ 完全移除 | `cd ~/.openclaw/workspace/ClawDashboard && bash setup.sh --uninstall` |
+| 🔄 更新到最新版 | `bash setup.sh --update` |
+| 📋 查看狀態 | `bash setup.sh --status` |
+| 🔀 切換到區網模式 | `bash setup.sh --switch-lan` |
+| 🔀 切換到本地模式 | `bash setup.sh --switch-local` |
+| 🗑️ 完全移除 | `bash setup.sh --uninstall` |
+
+**移除後請告訴 AI Agent（重要！避免記憶污染）：**
+
+> 「請清除所有 ClawDashboard 相關的長期記憶：
+> 1. 刪除 `memory/` 下所有 `claw-dashboard` 相關檔案
+> 2. 從 `MEMORY.md` 移除 ClawDashboard 相關索引
+> 3. 確認記憶已清理乾淨」
 
 </details>
 
@@ -114,8 +144,7 @@
 #### 📥 Step 1: Clone
 
 ```bash
-mkdir -p ~/.openclaw/workspace
-cd ~/.openclaw/workspace
+# Clone 到你想要的位置 (任意目錄皆可)
 git clone https://github.com/tbdavid2019/ClawDashboard.git
 cd ClawDashboard
 ```
