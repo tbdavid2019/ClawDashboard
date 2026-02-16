@@ -16,6 +16,7 @@ function AppContent() {
   const [isConnected, setIsConnected] = useState(true);
   const [lastSync, setLastSync] = useState(new Date());
   const [agents, setAgents] = useState([]);
+  const [agentStates, setAgentStates] = useState({});
   const { t, lang, setLang } = useTranslation();
 
   useEffect(() => {
@@ -27,6 +28,7 @@ function AppContent() {
         const data = await res.json();
         setStatus(data.status || 'idle');
         setActiveAgent(data.activeAgent || 'Claw');
+        setAgentStates(data.agents || {});
         setIsConnected(true);
         setLastSync(new Date());
       } catch (err) {
@@ -86,13 +88,26 @@ function AppContent() {
   };
 
   const agentsOnDuty = (agents || []).map(a => {
-    const isActive = activeAgent === a.name && status.toLowerCase() !== 'idle';
+    // Priority: Individual state > Global active agent
+    const specificState = agentStates[a.name];
+    const isGlobalActive = activeAgent === a.name && status.toLowerCase() !== 'idle';
+
+    // Determine the effective status for this agent
+    let effectiveStatus = 'idle';
+    if (specificState) {
+      effectiveStatus = specificState.toLowerCase();
+    } else if (isGlobalActive) {
+      effectiveStatus = status.toLowerCase();
+    }
+
+    const isActive = effectiveStatus !== 'idle';
+
     return {
       name: a.name,
       role: a.role || 'Agent',
       emoji: a.emoji || '🤖',
-      status: isActive ? 'busy' : 'standby',
-      label: getAgentLabel(isActive, status)
+      status: isActive ? (effectiveStatus === 'thinking' ? 'thinking' : 'busy') : 'standby',
+      label: getAgentLabel(isActive, effectiveStatus)
     };
   });
 

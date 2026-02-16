@@ -5,7 +5,26 @@
 核心理念：**所有 Agent 行為都必須可視化、可追蹤、可回放**，形成 `Agent` → `Status` → `Task` → `Docs` → `UI` 的完整閉環系統。
 
 
-## 🚀 快速開始
+
+# tbdavid2019更改
+
+已升級為 **Multi-Agent Team View (多重 Agent 並行視角)**，不再侷限於單一 Agent 的狀態顯示。
+
+### ✨ 新增功能
+1.  **並行狀態追蹤 (Concurrency Tracking)**
+    -   後端新增 `agent_states` 資料表，可獨立記錄每個 Agent (如 `Coder`, `Architect`, `Reviewer`) 的即時狀態。
+    -   即使多個 Agent 同時工作，狀態燈也能正確反映各自的進度。
+
+2.  **視覺化升級 (Visual Enhancements)**
+    -   **Thinking (思考中)**: 新增黃色呼吸燈動畫 🟡，與執行中的紅色燈號 🔴 做區隔。
+    -   側邊欄現在會優先顯示個別 Agent 的狀態，而非全域狀態。
+
+3.  **API 更新**
+    -   `POST /api/status/agent`: 供 Agent 回報個別狀態。
+    -   `GET /api/status`: 回傳資料新增 `agents` 欄位，包含所有成員的最新動態。## 🚀 快速開始
+
+### 感謝原作者
+[Ry7no/ClawDashboard](https://github.com/Ry7no/ClawDashboard)
 
 ### 📥 安裝與 Clone
 
@@ -15,7 +34,7 @@
 ```bash
 mkdir -p .openclaw/workspace
 cd .openclaw/workspace
-git clone git@github.com:Ry7no/ClawDashboard.git
+git clone https://github.com/tbdavid2019/ClawDashboard.git
 cd ClawDashboard
 ```
 

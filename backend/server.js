@@ -84,7 +84,7 @@ async function listBackendDocs() {
         results.push({ full, name: entry.name, mtime: stat.mtime });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
   return results;
 }
 
@@ -249,7 +249,16 @@ const initDatabase = async () => {
     try { await dbRun('ALTER TABLE status ADD COLUMN active_agent TEXT DEFAULT \'Claw\''); } catch (e) { }
     try { await dbRun('ALTER TABLE status ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP'); } catch (e) { }
     try { await dbRun('ALTER TABLE documents ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch (e) { }
+    try { await dbRun('ALTER TABLE documents ADD COLUMN is_pinned INTEGER DEFAULT 0'); } catch (e) { }
     try { await dbRun('ALTER TABLE documents ADD COLUMN sort_order INTEGER DEFAULT 0'); } catch (e) { }
+
+    await dbRun(`
+      CREATE TABLE IF NOT EXISTS agent_states (
+        name TEXT PRIMARY KEY,
+        state TEXT DEFAULT 'idle',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
     // Insert initial status if not exists
     await dbRun(`INSERT OR IGNORE INTO status (id, state) VALUES (1, 'idle')`);
@@ -286,9 +295,18 @@ app.get('/api/agents', async (req, res) => {
 app.get('/api/status', async (req, res) => {
   try {
     const row = await dbGet('SELECT state, active_agent, updated_at FROM status WHERE id = 1');
+    const agentRows = await dbQuery('SELECT * FROM agent_states');
+
+    // Convert array to map: { "Claw": "idle" }
+    const agentsMap = {};
+    if (agentRows) {
+      agentRows.forEach(a => { agentsMap[a.name] = a.state; });
+    }
+
     res.json({
       status: row?.state || 'idle',
       activeAgent: row?.active_agent || 'Claw',
+      agents: agentsMap,
       uptime: process.uptime(),
       timestamp: row?.updated_at || new Date().toISOString(),
       environment: 'local'
@@ -322,6 +340,24 @@ app.put('/api/status', async (req, res) => {
     } else {
       res.status(400).json({ error: 'Missing state or activeAgent' });
     }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/status/agent', async (req, res) => {
+  const { name, state } = req.body;
+  if (!name || !state) return res.status(400).json({ error: 'Missing name or state' });
+
+  try {
+    await dbRun(
+      `INSERT INTO agent_states (name, state, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+       ON CONFLICT(name) DO UPDATE SET state = ?, updated_at = CURRENT_TIMESTAMP`,
+      [name, state, state]
+    );
+
+    broadcast('agentStatusUpdated', { name, state });
+    res.json({ success: true, name, state });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
