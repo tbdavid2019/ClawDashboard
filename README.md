@@ -32,11 +32,49 @@
 
 ### 🤖 方式一：讓 AI Agent 幫你裝（推薦）
 
-直接對 OpenClaw 說一句話：
+複製以下提示詞，貼給你的 AI Agent（OpenClaw 或其他）：
 
-> **「請執行 `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh)` 安裝 ClawDashboard，完成後讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs` 下的所有 `.md` 檔並存入長記憶」**
+<details>
+<summary>📋 中文提示詞 (Chinese Prompt)</summary>
 
-Agent 會自動完成：Clone → 安裝依賴 → 偵測網路 → 配置 .env → PM2 背景啟動 → 開機自啟 → 讀取文件 → 回報 Dashboard URL。
+> 請幫我安裝 Claw Dashboard。
+>
+> **安裝前請先問我：**
+> 1. 我想要「本地模式」（只有這台電腦可看到）還是「區網模式」（其他電腦也能連進來看）？
+>
+> **確認後請執行：**
+> 1. 執行安裝指令：`bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` 或 `--lan`（根據我的選擇）
+> 2. 如果安裝過程有任何錯誤，請讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` 來排除問題
+> 3. 安裝完成後，讀取 `~/.openclaw/workspace/ClawDashboard/backend/docs/` 下所有 `.md` 檔案並存入長記憶
+> 4. 告訴我 Dashboard 的存取網址
+>
+> **注意事項：**
+> - Frontend port 固定為 5173（Vite），Backend port 固定為 3001
+> - 如果遇到 port 衝突，腳本會自動處理；如果仍有問題，查看 Troubleshooting.md
+> - 支援 Linux (x86/ARM/Raspberry Pi) 和 macOS
+
+</details>
+
+<details>
+<summary>📋 English Prompt</summary>
+
+> Please install Claw Dashboard for me.
+>
+> **Before installing, ask me:**
+> 1. Do I want "local mode" (only this machine can access) or "LAN mode" (other machines on the network can connect)?
+>
+> **After I answer, run:**
+> 1. Run: `bash <(curl -sSL https://raw.githubusercontent.com/tbdavid2019/ClawDashboard/main/setup.sh) --local` or `--lan` (based on my choice)
+> 2. If any errors occur, read `~/.openclaw/workspace/ClawDashboard/backend/docs/Troubleshooting.md` for solutions
+> 3. After installation, read all `.md` files in `~/.openclaw/workspace/ClawDashboard/backend/docs/` and save to long memory
+> 4. Tell me the Dashboard URL
+>
+> **Notes:**
+> - Frontend port is 5173 (Vite), Backend port is 3001
+> - The script auto-handles port conflicts; if issues persist, see Troubleshooting.md
+> - Supports Linux (x86/ARM/Raspberry Pi) and macOS
+
+</details>
 
 ---
 

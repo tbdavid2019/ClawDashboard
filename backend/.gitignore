@@ -5,10 +5,13 @@
 *.db
 *.sqlite
 
-# User Generated Documents
+# User Generated Documents (ignore by default, whitelist project docs)
 docs/*.md
 docs/*.pdf
 !docs/README.md
+!docs/Integration Log.md
+!docs/Long Memory Prompts.md
+!docs/Troubleshooting.md
 
 # Logs
 logs
