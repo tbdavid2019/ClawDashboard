@@ -29,7 +29,7 @@ if [ ! -f "backend/.env" ]; then
   echo "📝 已建立 backend/.env"
 fi
 
-# 啟動 Backend
+# 啟動 Backend (listen on 0.0.0.0)
 echo "⚡ 啟動 Backend (port 3001)..."
 (cd backend && node server.js) &
 BACKEND_PID=$!
@@ -37,15 +37,19 @@ BACKEND_PID=$!
 # 等 backend 準備好
 sleep 1
 
-# 啟動 Frontend
+# 啟動 Frontend (listen on 0.0.0.0 for LAN access)
 echo "⚡ 啟動 Frontend (port 5173)..."
-(cd frontend && npx vite --open) &
+(cd frontend && npx vite --host 0.0.0.0) &
 FRONTEND_PID=$!
+
+# 偵測 LAN IP
+LAN_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
 
 echo ""
 echo "✅ Dashboard 啟動完成！"
 echo "   🌐 Frontend: http://localhost:5173"
-echo "   🔌 Backend:  http://localhost:3001"
+echo "   🌐 LAN:      http://${LAN_IP}:5173"
+echo "   🔌 Backend:  http://${LAN_IP}:3001"
 echo ""
 echo "   按 Ctrl+C 停止所有服務"
 echo "=================================================="

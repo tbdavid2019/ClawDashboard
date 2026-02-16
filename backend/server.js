@@ -892,8 +892,9 @@ app.get('/api/sync/status', async (req, res) => {
 const startServer = async () => {
   await initDatabase();
 
-  app.listen(PORT, () => {
-    console.log(`Dashboard Backend running on port ${PORT}`);
+  const HOST = process.env.HOST || '0.0.0.0';
+  app.listen(PORT, HOST, () => {
+    console.log(`Dashboard Backend running on ${HOST}:${PORT}`);
     console.log(`Database: SQLite (${dbPath})`);
     console.log(`Storage: Local (${docsDir})`);
 
