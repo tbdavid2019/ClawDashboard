@@ -166,17 +166,63 @@ check_health() {
 }
 
 # ============================================
+# Find project directory (auto-detect)
+# ============================================
+find_project_dir() {
+  # 1. Current directory
+  if [ -f "./backend/server.js" ] && [ -f "./frontend/vite.config.js" ]; then
+    echo "$(pwd)"; return
+  fi
+  # 2. Parent of current directory (if we're in backend/ or frontend/)
+  if [ -f "../backend/server.js" ] && [ -f "../frontend/vite.config.js" ]; then
+    echo "$(cd .. && pwd)"; return
+  fi
+  # 3. Script's own location (if run from installed copy)
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd)"
+  if [ -f "$script_dir/backend/server.js" ]; then
+    echo "$script_dir"; return
+  fi
+  # 4. PM2 cwd (if running)
+  if command -v pm2 &>/dev/null; then
+    local pm2_cwd
+    pm2_cwd=$(pm2 jlist 2>/dev/null | grep -o '"cwd":"[^"]*ClawDashboard[^"]*"' | head -1 | cut -d'"' -f4 2>/dev/null || true)
+    if [ -n "$pm2_cwd" ] && [ -f "$pm2_cwd/backend/server.js" ]; then
+      # pm2_cwd might point to backend/ or project root
+      if [ -f "$pm2_cwd/server.js" ]; then
+        echo "$(dirname "$pm2_cwd")"; return
+      else
+        echo "$pm2_cwd"; return
+      fi
+    fi
+  fi
+  # 5. Common locations
+  for dir in \
+    "$HOME/.openclaw/workspace/ClawDashboard" \
+    "$HOME/ClawDashboard" \
+    "/opt/ClawDashboard"; do
+    if [ -f "$dir/backend/server.js" ]; then
+      echo "$dir"; return
+    fi
+  done
+  return 1
+}
+
+require_project_dir() {
+  PROJECT_DIR=$(find_project_dir) || {
+    echo "❌ ClawDashboard not found!"
+    echo "   Please run this command from inside the ClawDashboard directory,"
+    echo "   or cd into it first:"
+    echo "   cd /path/to/ClawDashboard && bash setup.sh $1"
+    exit 1
+  }
+}
+
+# ============================================
 # UPDATE Command
 # ============================================
 do_update() {
-  WORKSPACE="$HOME/.openclaw/workspace"
-  PROJECT_DIR="$WORKSPACE/ClawDashboard"
-
-  if [ ! -d "$PROJECT_DIR" ]; then
-    echo "❌ ClawDashboard not found at ${PROJECT_DIR}"
-    echo "   Run setup.sh without --update to install first."
-    exit 1
-  fi
+  require_project_dir "--update"
 
   echo ""
   echo "🔄 Claw Dashboard — Update"
@@ -211,8 +257,7 @@ do_update() {
 # UNINSTALL Command
 # ============================================
 do_uninstall() {
-  WORKSPACE="$HOME/.openclaw/workspace"
-  PROJECT_DIR="$WORKSPACE/ClawDashboard"
+  require_project_dir "--uninstall"
 
   echo ""
   echo "🗑️  Claw Dashboard — Uninstall"
@@ -277,18 +322,11 @@ do_uninstall() {
 # STATUS Command
 # ============================================
 do_status() {
-  WORKSPACE="$HOME/.openclaw/workspace"
-  PROJECT_DIR="$WORKSPACE/ClawDashboard"
+  require_project_dir "--status"
 
   echo ""
   echo "📋 Claw Dashboard — Status"
   echo "=================================================="
-
-  if [ ! -d "$PROJECT_DIR" ]; then
-    echo "   ❌ Not installed (expected at ${PROJECT_DIR})"
-    echo "=================================================="
-    exit 1
-  fi
   echo "   📁 Project: ${PROJECT_DIR}"
 
   # Read .env
@@ -333,13 +371,7 @@ do_status() {
 # ============================================
 do_switch() {
   local target_mode=$1
-  WORKSPACE="$HOME/.openclaw/workspace"
-  PROJECT_DIR="$WORKSPACE/ClawDashboard"
-
-  if [ ! -d "$PROJECT_DIR" ]; then
-    echo "❌ Not installed. Run setup.sh first."
-    exit 1
-  fi
+  require_project_dir "--switch-${target_mode}"
 
   cd "$PROJECT_DIR"
 
@@ -525,19 +557,25 @@ elif [ -f "$(dirname "$WORKSPACE_PATH")/openclaw.json" ]; then
 fi
 
 # ---- Clone or Update ----
-WORKSPACE="$HOME/.openclaw/workspace"
-PROJECT_DIR="$WORKSPACE/ClawDashboard"
-mkdir -p "$WORKSPACE"
+# Check if already inside a ClawDashboard directory
+PROJECT_DIR=$(find_project_dir 2>/dev/null || true)
 
 echo ""
-if [ -d "$PROJECT_DIR" ]; then
-  echo "📂 Project exists, pulling updates..."
+if [ -n "$PROJECT_DIR" ]; then
+  echo "📂 Project found at ${PROJECT_DIR}, pulling updates..."
   cd "$PROJECT_DIR"
   git pull
 else
-  echo "📥 Cloning..."
-  cd "$WORKSPACE"
+  # Fresh install: use current directory or default
+  INSTALL_PARENT="$(pwd)"
+  if [ "$INSTALL_PARENT" = "$HOME" ] || [ "$INSTALL_PARENT" = "/" ]; then
+    INSTALL_PARENT="$HOME/.openclaw/workspace"
+  fi
+  mkdir -p "$INSTALL_PARENT"
+  echo "📥 Cloning to ${INSTALL_PARENT}/ClawDashboard..."
+  cd "$INSTALL_PARENT"
   git clone https://github.com/tbdavid2019/ClawDashboard.git
+  PROJECT_DIR="$INSTALL_PARENT/ClawDashboard"
   cd "$PROJECT_DIR"
 fi
 
