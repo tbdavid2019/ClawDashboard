@@ -40,17 +40,75 @@ git clone https://github.com/tbdavid2019/ClawDashboard.git
 cd ClawDashboard
 ```
 
+### ⚡ 啟動方式
 
-### ⚡ 一行啟動
-
-專案內建自動化啟動腳本，首次運行會自動安裝依賴：
+#### 方式一：前景啟動（開發 / 測試用）
 
 ```bash
 chmod +x start.sh && ./start.sh
 ```
 
-啟動後會自動開啟瀏覽器，訪問 `http://localhost:5173`。
+- 首次運行會自動安裝依賴
+- `Ctrl+C` 停止所有服務
+- 適合臨時測試或開發調試
 
+#### 方式二：背景啟動（正式部署推薦）
+
+使用 PM2 在背景常駐運行：
+
+```bash
+./start.sh --bg
+```
+
+管理 PM2 服務：
+
+| 指令 | 功能 |
+| :--- | :--- |
+| `./start.sh --bg` | 背景啟動 (PM2) |
+| `./start.sh --stop` | 停止服務 |
+| `./start.sh --status` | 查看狀態 |
+| `pm2 logs` | 即時日誌 |
+| `pm2 restart all` | 重啟服務 |
+
+#### 方式三：開機自啟
+
+```bash
+# 1. 先背景啟動
+./start.sh --bg
+
+# 2. 設定開機自啟
+./start.sh --boot
+
+# 3. 儲存當前 PM2 服務列表
+pm2 save
+```
+
+重開機後 PM2 會自動恢復所有服務。
+
+---
+
+### 🌐 本地模式 vs 區網模式
+
+預設為**本地模式**（只有本機可存取）。如需從其他電腦存取，請修改 `backend/.env`：
+
+```bash
+# backend/.env
+
+# 本地模式 (預設，只有 localhost 可連)
+HOST=127.0.0.1
+
+# 區網模式 (其他電腦可透過 IP 連入)
+HOST=0.0.0.0
+```
+
+修改後重啟服務。區網模式下，前端會自動偵測瀏覽器的 hostname，無需額外設定 API 位址。
+
+假設 Linux 主機 IP 為 `10.0.0.10`，從其他電腦打開：
+```
+http://10.0.0.10:5173
+```
+
+---
 
 ### 🧠 初始化長期記憶 (Long Memory Init)
 
@@ -86,6 +144,7 @@ graph TD
     - `idle`: 閒置中，等待指令。
     - `thinking`: 收到任務，正在規劃或思考。
     - `acting`: 正在執行具體操作。
+- **多 Agent 支援**：每個 Agent 可獨立回報狀態，前端會分別顯示。
 - **自動化規則**：
     1.  收到任務 → 狀態轉為 `thinking`
     2.  開始執行 → 狀態轉為 `acting`
@@ -163,16 +222,26 @@ graph TD
 
 ## ⚙️ 環境變數 (Environment Variables)
 
-設定檔位於 `backend/.env`：
+### Backend (`backend/.env`)
 
 | 變數 | 預設值 | 說明 |
 | :--- | :--- | :--- |
-| `PORT` | 3001 | Backend 服務端口 |
-| `DB_PATH` | bot.db | SQLite 資料庫路徑 |
-| `DOCS_DIR` | docs | 文件存放目錄名稱 |
+| `PORT` | `3001` | Backend 服務端口 |
+| `HOST` | `127.0.0.1` | 綁定地址。`0.0.0.0` = 區網可存取 |
+| `DB_PATH` | `bot.db` | SQLite 資料庫路徑 |
+| `DOCS_DIR` | `docs` | 文件存放目錄名稱 |
+| `CORS_ORIGINS` | `*` | CORS 白名單。`*` = 允許全部，或逗號分隔的來源列表 |
+
+### Frontend (`frontend/.env`)
+
+| 變數 | 預設值 | 說明 |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | (自動偵測) | 覆蓋 API 位址，例如 `http://10.0.0.10:3001` |
+| `VITE_BACKEND_PORT` | `3001` | 覆蓋後端端口 |
 
 ---
 
 ## 📝 License
 
 MIT
+
